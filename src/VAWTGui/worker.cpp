@@ -6,15 +6,22 @@ static modbus_t *ctx; //Modbus Connection Handler
 static struct timeval start, diff, end;
 const float maxonMulti=500;
 
-Worker::Worker(QObject *parent, std::ofstream &f, int dela) : QObject(parent), file(f)
+Worker::Worker(std::ofstream &f, int dela, QString mayumopath, QObject *parent)  : file(f), mayumoPath(mayumopath), QObject(parent)
 {
     del=float(dela);
     file.flush();
 }
-s
+
 void Worker::startWork()
 {
-    measureLoop();
+
+    if (mayumoPath.isEmpty()){
+        measureLoopWithoutLoad();
+    } else {
+        measureLoopWithLoad();
+    }
+
+
     emit(execFinished());
 }
 
@@ -68,7 +75,15 @@ void Worker::countMaxonInterrupts()
     counter++;
 }
 
-int Worker::measureLoop()
+float Worker::convfl(uint16_t *tab, int idx){
+  uint32_t a;
+  float f;
+  a = (((uint32_t)tab[idx]) << 16) + tab[idx+1];
+  memcpy(&f, &a, sizeof(float));
+  return f;
+}
+
+int Worker::measureLoopWithoutLoad()
 {
     rtsched();
     piSetup();
@@ -100,5 +115,45 @@ int Worker::measureLoop()
     }
 
 }
+
+int Worker::measureLoopWithLoad()
+{
+    QString qdisp;
+    char **disp;
+    char **row;
+    rtsched();
+    piSetup();
+    openLoad(mayumoPath.toStdString().c_str());
+    modbus_set_slave(ctx,1);
+    modbus_set_response_timeout(ctx, 1, 0);
+      gettimeofday(&start,0);
+      float rps=0,rpm=0,i=0,u=0,p=0,r=0;
+      time_t t;
+      struct tm *tnow;
+      int rc=0;
+         while(!QThread::currentThread()->isInterruptionRequested()){
+          rc=readLoadRegister(0x0B00);
+          rps=(counter/maxonMulti)*(1000/del);
+          rpm=rps*60;
+          i=convfl(&reg[2],0);
+          u=convfl(&reg[0],0);
+          //p=convfl(&reg[5],0);
+          //r=convfl(&reg[7],0);
+          p=i*u;
+          gettimeofday(&end,0);
+          timersub(&end,&start,&diff);
+          asprintf(disp,"RPM: %f\nRPS: %f\nI: %f A \nU: %f V \nP: %f W \n",rpm, rps, i,u,p,r);
+          qdisp = QString::fromUtf8(*disp);
+          emit resultReady(qdisp);
+          //printf("I: %f oA \nU: %f V \nP: %f W \nR: %f Ohm \n", );
+          counter = 0;
+          time(&t);
+          tnow=localtime(&t);
+          asprintf(row, "%02d.%02d.%02d %02d:%02d:%02d;%li.%0li;%f;%f;%f;%f;%f\n", tnow->tm_mday, tnow->tm_mon, tnow->tm_year+1900, tnow->tm_hour, tnow->tm_min, tnow->tm_sec, diff.tv_sec, diff.tv_usec, rpm, rps, i,u,p,r);
+          file << row;
+          file.flush();
+          delay(static_cast<int>(del));
+        }
+      }
 
 

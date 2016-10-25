@@ -63,7 +63,7 @@ void MainWindow::Start()
     openFile(f);
     writeHeader("Datum;Timer;RPM;RPS;I;U;P;R\n", f);
     int dela = ui->spbDelay->value();
-    Worker *worker = new Worker(0, f, dela);
+    Worker *worker = new Worker(f, dela, ui->txtMayumi->text());
     worker->moveToThread(&workerThread);
     connect(&workerThread, &QThread::finished, worker, &QObject::deleteLater);
     connect(&workerThread, &QThread::started, worker, &Worker::startWork);
