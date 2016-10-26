@@ -21,24 +21,26 @@ class Worker : public QObject {
 
     Q_OBJECT
 public:
-    explicit Worker(std::ofstream &f, int dela, QString mayumopath ,QObject *parent=0);
+    explicit Worker(std::ofstream &f, int dela, QString mayumopath ,
+                    QObject *parent=0);
 
 public slots:
-    void startWork();
-
-signals:
-    void resultReady(const QString &result);
-    void execFinished();
-
-private:
-    QString mayumoPath;
-    std::ofstream &file;
-    float del;
     void rtsched();
     float convfl(uint16_t *tab, int idx);
     int openLoad(const char *c);
     void piSetup();
     int readLoadRegister(int addr);
+    void startWork();
+
+signals:
+    void resultReady(const QString &result);
+    void execFinished();
+    void sigFailure();
+
+private:
+    QString mayumoPath;
+    std::ofstream &file;
+    float del;
     static void countMaxonInterrupts ();
     struct sched_param param;
     int measureLoopWithoutLoad();

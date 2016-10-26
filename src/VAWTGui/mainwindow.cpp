@@ -10,9 +10,6 @@ MainWindow::MainWindow(QWidget *parent)
     if (!isFileExisiting(ui->txtMayumi->text().toStdString().c_str())) {
         ui->txtMayumi->setText("");
     }
-    if (!isFileExisiting(ui->txtAnemo->text().toStdString().c_str())) {
-        ui->txtAnemo->setText("");
-    }
     Path = ".";
     this->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter,
                                           this->size(),
@@ -29,19 +26,6 @@ MainWindow::~MainWindow()
 
 bool MainWindow::checkParams()
 {
-
-    if (!ui->txtAnemo->text().toStdString().empty()) {
-        if (!isFileExisiting(ui->txtAnemo->text().toStdString().c_str())) {
-            QMessageBox msg;
-            msg.setWindowTitle("Error!");
-            msg.setText("Anemometer Devicefile doesn't exist: " +
-                        ui->txtAnemo->text());
-            msg.exec();
-            return false;
-        } else {
-            isAnemoEnabled = true;
-        }
-    }
     if (!ui->txtMayumi->text().toStdString().empty()) {
         if (!isFileExisiting(ui->txtMayumi->text().toStdString().c_str())) {
             QMessageBox msg;
@@ -61,7 +45,7 @@ bool MainWindow::checkParams()
 void MainWindow::Start()
 {
     openFile(f);
-    writeHeader("Datum;Timer;RPM;RPS;I;U;P;R\n", f);
+    writeHeader(f);
     int dela = ui->spbDelay->value();
     Worker *worker = new Worker(f, dela, ui->txtMayumi->text());
     worker->moveToThread(&workerThread);
@@ -69,6 +53,7 @@ void MainWindow::Start()
     connect(&workerThread, &QThread::started, worker, &Worker::startWork);
     connect(worker, &Worker::resultReady, this, &MainWindow::handleResults);
     connect(worker, &Worker::execFinished, this, &MainWindow::handleFinish);
+    connect(worker, &Worker::sigFailure, this, &MainWindow::handleFailure);
     workerThread.start();
 }
 
@@ -99,6 +84,13 @@ void MainWindow::handleFinish()
     f.close();
 }
 
+void MainWindow::handleFailure()
+{
+    workerThread.exit();
+    workerThread.wait();
+    exit(1);
+}
+
 void MainWindow::on_chkLogging_toggled(bool checked)
 {
     if (checked == true) {
@@ -118,7 +110,6 @@ void MainWindow::on_btnPath_clicked()
 void MainWindow::on_btnStart_clicked()
 {
     isLoggingEnabled = ui->chkLogging->isChecked();
-    isAnemoEnabled = false;
     isMayumoEnabled = false;
     if (checkParams()) {
         Start();
@@ -129,20 +120,22 @@ void MainWindow::on_btnStart_clicked()
 
 void MainWindow::openFile(std::ofstream &f)
 {
+    char *filename=nullptr;
     time_t t;
-    struct tm *tnow;
+    struct tm *tnow=nullptr;
     std::stringstream file;
     time(&t);
     tnow = localtime(&t);
-    file << Path.toStdString() << "/" << tnow->tm_mday << "-" << tnow->tm_mon
-         << "-" << tnow->tm_year + 1900 << "_" << tnow->tm_hour << "_"
-         << tnow->tm_min << "_" << tnow->tm_sec << ".csv";
-    QMessageBox msg;
-    msg.setWindowTitle("Logpath");
-    msg.setText(QString(file.str().c_str()));
-    msg.exec();
+    asprintf(&filename, "%02d-%02d-%02d_%02d-%02d-%02d.csv" ,tnow->tm_mday,
+             tnow->tm_mon, tnow->tm_year+1900, tnow->tm_hour, tnow->tm_min, tnow->tm_sec);
+    file << Path.toStdString() << "/" << filename;
+    /*    QMessageBox msg;
+        msg.setWindowTitle("Logpath");
+        msg.setText(QString(file.str().c_str()));
+        msg.exec(); */
     f.open(file.str().c_str());
     if (f.fail()) {
+        QMessageBox msg;
         msg.setWindowTitle("ERROR!");
         msg.setText("Couldn't open logfile: " + Path);
         msg.exec();
@@ -150,9 +143,9 @@ void MainWindow::openFile(std::ofstream &f)
     }
 }
 
-void MainWindow::writeHeader(const char *c, std::ofstream &f)
+void MainWindow::writeHeader(std::ofstream &f)
 {
-    f << c;
+    f << "Date;Timer;RPM;RPS;I;U;P;R\n";;
     f.flush();
 }
 

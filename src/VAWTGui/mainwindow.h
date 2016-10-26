@@ -38,6 +38,7 @@ public:
 public slots:
     void handleResults(const QString &res);
     void handleFinish();
+    void handleFailure();
 
 private slots:
     void on_btnClose_clicked();
@@ -50,8 +51,7 @@ private:
     Ui::MainWindow *ui;
     QString Path;
     void openFile(std::ofstream &f);
-    void writeHeader(const char *c, std::ofstream &f);
-    bool isAnemoEnabled;
+    void writeHeader(std::ofstream &f);
     bool isMayumoEnabled;
     bool isLoggingEnabled;
 
