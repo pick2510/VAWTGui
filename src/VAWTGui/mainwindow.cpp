@@ -158,6 +158,7 @@ void MainWindow::on_btnCancel_clicked()
 {
     workerThread.requestInterruption();
     workerThread.terminate();
+    ui->txtDisp->setText("");
 }
 
 void MainWindow::piInitialize()
