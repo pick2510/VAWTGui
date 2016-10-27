@@ -3,6 +3,8 @@
 #include "ui_mainwindow.h"
 #include "worker.h"
 
+const static char *HEADER="Date;Timer;RPM;RPS;I;U;P;R;Nm(V)\n";
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
 {
@@ -47,7 +49,8 @@ void MainWindow::Start()
     openFile(f);
     writeHeader(f);
     int dela = ui->spbDelay->value();
-    Worker *worker = new Worker(f, dela, ui->txtMayumi->text());
+    Worker *worker = new Worker(f, dela, ui->txtMayumi->text(),
+                                ui->chkTorque->isChecked());
     worker->moveToThread(&workerThread);
     connect(&workerThread, &QThread::finished, worker, &QObject::deleteLater);
     connect(&workerThread, &QThread::started, worker, &Worker::startWork);
@@ -145,7 +148,7 @@ void MainWindow::openFile(std::ofstream &f)
 
 void MainWindow::writeHeader(std::ofstream &f)
 {
-    f << "Date;Timer;RPM;RPS;I;U;P;R\n";;
+    f << HEADER;
     f.flush();
 }
 

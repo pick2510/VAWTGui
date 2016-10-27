@@ -9,6 +9,7 @@
 #include <string>
 #include <iostream>
 #include "wiringPi.h"
+#include "wiringPiSPI.h"
 #include <time.h>
 #include <sys/time.h>
 #include "modbus/modbus.h"
@@ -21,7 +22,8 @@ class Worker : public QObject {
 
     Q_OBJECT
 public:
-    explicit Worker(std::ofstream &f, int dela, QString mayumopath ,
+    explicit Worker(std::ofstream &f, int dela, QString mayumopath,
+                    bool isTorqueEnabled,
                     QObject *parent=0);
 
 public slots:
@@ -40,11 +42,14 @@ signals:
 private:
     QString mayumoPath;
     std::ofstream &file;
+    bool torqueEnabled;
     float del;
     static void countMaxonInterrupts ();
     struct sched_param param;
-    int measureLoopWithoutLoad();
-    int measureLoopWithLoad();
+    int measureLoopWithoutLoadWithoutTorque();
+    int measureLoopWithLoadWithoutTorque();
+    int measureLoopWithoutLoadWithTorque();
+    int measureLoopWithLoadWithTorque();
 };
 
 #endif // Worker_H
