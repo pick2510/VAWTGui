@@ -6,8 +6,6 @@ static modbus_t *ctx; //Modbus Connection Handler
 static struct timeval start, diff, end;
 const static double MAXONMULTI=500;
 const static int SPI_CHANNEL = 0;
-const static int SPI_DEV=0;
-const static long int SPI_SPEED=1000000;
 const static double REFERENCE_VOLTAGE=3.3;
 
 Worker::Worker(std::ofstream &f, int dela, QString mayumopath,
