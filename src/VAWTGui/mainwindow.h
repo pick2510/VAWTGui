@@ -17,6 +17,7 @@
 #include <QStringList>
 #include <time.h>
 #include <sys/time.h>
+#include "worker.h"
 
 namespace Ui {
 class MainWindow;
@@ -26,6 +27,7 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
     std::ofstream f;
     QThread workerThread;
+    Worker *worker=nullptr;
 
 public:
     explicit MainWindow(QWidget *parent = 0);
@@ -50,6 +52,8 @@ private slots:
 private:
     Ui::MainWindow *ui;
     QString Path;
+    int fd;
+    void piInitialize();
     void openFile(std::ofstream &f);
     void writeHeader(std::ofstream &f);
     bool isMayumoEnabled;

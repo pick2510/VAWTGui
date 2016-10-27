@@ -23,14 +23,13 @@ class Worker : public QObject {
     Q_OBJECT
 public:
     explicit Worker(std::ofstream &f, int dela, QString mayumopath,
-                    bool isTorqueEnabled,
+                    bool isTorqueEnabled, int fd,
                     QObject *parent=0);
 
 public slots:
     void rtsched();
     float convfl(uint16_t *tab, int idx);
     int openLoad(const char *c);
-    void piSetup();
     int readLoadRegister(int addr);
     void startWork();
 
@@ -43,7 +42,9 @@ private:
     QString mayumoPath;
     std::ofstream &file;
     bool torqueEnabled;
+    void piSetup();
     float del;
+    int fd;
     static void countMaxonInterrupts ();
     struct sched_param param;
     int measureLoopWithoutLoadWithoutTorque();

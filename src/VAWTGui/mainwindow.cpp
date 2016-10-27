@@ -1,8 +1,12 @@
 #include "mainwindow.h"
+#include "wiringPiSPI.h"
+#include "wiringPi.h"
 #include "libvawt.h"
 #include "ui_mainwindow.h"
-#include "worker.h"
 
+const static int SPI_CHANNEL = 0;
+const static int SPI_DEV=0;
+const static long int SPI_SPEED=1000000;
 const static char *HEADER="Date;Timer;RPM;RPS;I;U;P;R;Nm(V)\n";
 
 MainWindow::MainWindow(QWidget *parent)
@@ -16,7 +20,10 @@ MainWindow::MainWindow(QWidget *parent)
     this->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter,
                                           this->size(),
                                           qApp->desktop()->availableGeometry()));
+    fd=0;
     this->setFixedSize(this->size());
+    piInitialize();
+
 }
 
 MainWindow::~MainWindow()
@@ -50,7 +57,7 @@ void MainWindow::Start()
     writeHeader(f);
     int dela = ui->spbDelay->value();
     Worker *worker = new Worker(f, dela, ui->txtMayumi->text(),
-                                ui->chkTorque->isChecked());
+                                ui->chkTorque->isChecked(), fd);
     worker->moveToThread(&workerThread);
     connect(&workerThread, &QThread::finished, worker, &QObject::deleteLater);
     connect(&workerThread, &QThread::started, worker, &Worker::startWork);
@@ -89,8 +96,7 @@ void MainWindow::handleFinish()
 
 void MainWindow::handleFailure()
 {
-    workerThread.exit();
-    workerThread.wait();
+    workerThread.terminate();
     exit(1);
 }
 
@@ -132,10 +138,6 @@ void MainWindow::openFile(std::ofstream &f)
     asprintf(&filename, "%02d-%02d-%02d_%02d-%02d-%02d.csv" ,tnow->tm_mday,
              tnow->tm_mon, tnow->tm_year+1900, tnow->tm_hour, tnow->tm_min, tnow->tm_sec);
     file << Path.toStdString() << "/" << filename;
-    /*    QMessageBox msg;
-        msg.setWindowTitle("Logpath");
-        msg.setText(QString(file.str().c_str()));
-        msg.exec(); */
     f.open(file.str().c_str());
     if (f.fail()) {
         QMessageBox msg;
@@ -155,4 +157,11 @@ void MainWindow::writeHeader(std::ofstream &f)
 void MainWindow::on_btnCancel_clicked()
 {
     workerThread.requestInterruption();
+    workerThread.terminate();
+}
+
+void MainWindow::piInitialize()
+{
+    wiringPiSetup();
+    fd=wiringPiSPISetup(SPI_DEV, SPI_SPEED);
 }

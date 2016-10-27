@@ -11,11 +11,13 @@ const static long int SPI_SPEED=1000000;
 const static double REFERENCE_VOLTAGE=3.3;
 
 Worker::Worker(std::ofstream &f, int dela, QString mayumopath,
-               bool isTorqueEnabled, QObject *parent)  : file(f),
+               bool isTorqueEnabled, int fd, QObject *parent)  : file(f),
     torqueEnabled(isTorqueEnabled), mayumoPath(mayumopath), QObject(parent)
 {
     del=float(dela);
     file.flush();
+    this->fd=fd;
+    piSetup();
 }
 
 void Worker::startWork()
@@ -30,6 +32,13 @@ void Worker::startWork()
     if ((!mayumoPath.isEmpty())
             && (torqueEnabled==true)) measureLoopWithLoadWithTorque();
     emit(execFinished());
+}
+
+void Worker::piSetup()
+{
+    pinMode(2, INPUT);
+    pullUpDnControl(2, PUD_UP);
+    wiringPiISR(2,INT_EDGE_FALLING, &countMaxonInterrupts);
 }
 
 void Worker::rtsched()
@@ -54,13 +63,6 @@ int Worker::openLoad(const char *c)
     } else return 1;
 }
 
-void Worker::piSetup()
-{
-    wiringPiSetup();
-    pinMode(2, INPUT);
-    pullUpDnControl(2, PUD_UP);
-    wiringPiISR(2,INT_EDGE_FALLING, &countMaxonInterrupts);
-}
 
 int Worker::readLoadRegister(int addr)
 {
@@ -94,7 +96,6 @@ float Worker::convfl(uint16_t *tab, int idx)
 int Worker::measureLoopWithoutLoadWithoutTorque()
 {
     rtsched();
-    piSetup();
     gettimeofday(&start,0);
     QString qdisp;
     float rps=0,rpm=0;
@@ -131,7 +132,6 @@ int Worker::measureLoopWithLoadWithoutTorque()
     char *disp = nullptr;
     char *row = nullptr;
     rtsched();
-    piSetup();
     if (openLoad(mayumoPath.toStdString().c_str())==-1) {
         QMessageBox msg;
         msg.setWindowTitle("Error!");
@@ -180,13 +180,11 @@ int Worker::measureLoopWithLoadWithoutTorque()
 int Worker::measureLoopWithoutLoadWithTorque()
 {
     rtsched();
-    piSetup();
     gettimeofday(&start,0);
     QString qdisp;
-    int fd, out;
+    int out;
     double val;
     unsigned char data[3];
-    fd=wiringPiSPISetup(SPI_DEV, SPI_SPEED);
     if (fd == -1) {
         QMessageBox msg;
         msg.setWindowTitle("Error Opening SPI Dev. Maybe not enabled?");
@@ -233,7 +231,6 @@ int Worker::measureLoopWithLoadWithTorque()
     char *disp = nullptr;
     char *row = nullptr;
     rtsched();
-    piSetup();
     if (openLoad(mayumoPath.toStdString().c_str())==-1) {
         QMessageBox msg;
         msg.setWindowTitle("Error!");
@@ -243,10 +240,9 @@ int Worker::measureLoopWithLoadWithTorque()
     }
     modbus_set_slave(ctx,1);
     modbus_set_response_timeout(ctx, 1, 0);
-    int fd, out;
+    int out;
     double val;
     unsigned char data[3];
-    fd=wiringPiSPISetup(SPI_DEV, SPI_SPEED);
     if (fd == -1) {
         QMessageBox msg;
         msg.setWindowTitle("Error Opening SPI Dev. Maybe not enabled?");
