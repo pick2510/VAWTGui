@@ -72,7 +72,7 @@ int Worker::readLoadRegister(int addr)
         msg.setWindowTitle("Error!");
         msg.setText("Couldn't read :" + err);
         msg.exec();
-        emit(sigFailure());
+        exit(-1);
     }
     return i;
 }
@@ -234,7 +234,8 @@ int Worker::measureLoopWithLoadWithTorque()
         msg.setWindowTitle("Error!");
         msg.setText("Exit");
         msg.exec();
-        emit(sigFailure());
+        return -1;
+        //emit(sigFailure());
     }
     modbus_set_slave(ctx,1);
     modbus_set_response_timeout(ctx, 1, 0);
@@ -253,6 +254,10 @@ int Worker::measureLoopWithLoadWithTorque()
     time_t t;
     struct tm *tnow;
     int rc=0;
+    rc=readLoadRegister(0x0B00);
+    if (rc == -1) {
+        return -1;
+    }
     while(!QThread::currentThread()->isInterruptionRequested()) {
         rc=readLoadRegister(0x0B00);
         rps=(counter/MAXONMULTI)*(1000/del);
