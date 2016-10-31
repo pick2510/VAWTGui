@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <QMainWindow>
+#include <stdint.h>
 #include <QDir>
 #include <QTreeWidgetItem>
 #include <QFileDialog>
@@ -16,8 +17,12 @@
 #include <QFileInfoList>
 #include <QStringList>
 #include <time.h>
+#include <sys/ioctl.h>
+#include <linux/types.h>
+#include <linux/spi/spidev.h>
 #include <sys/time.h>
 #include "worker.h"
+#include "libvawt.h"
 
 namespace Ui {
 class MainWindow;
@@ -26,6 +31,7 @@ class MainWindow;
 class MainWindow : public QMainWindow {
     Q_OBJECT
     std::ofstream f;
+    struct SPICONF MYSPICONF;
     QThread workerThread;
     Worker *worker=nullptr;
 
@@ -54,6 +60,7 @@ private:
     QString Path;
     int fd;
     void piInitialize();
+    void SPIInitialize();
     void openFile(std::ofstream &f);
     void writeHeader(std::ofstream &f);
     bool isMayumoEnabled;

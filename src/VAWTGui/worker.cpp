@@ -5,17 +5,21 @@ static uint16_t reg[160]; //Maynuo DC Load Register
 static modbus_t *ctx; //Modbus Connection Handler
 static struct timeval start, diff, end;
 const static double MAXONMULTI=500;
-const static int SPI_CHANNEL = 0;
-const static double REFERENCE_VOLTAGE=3.3;
+
 
 Worker::Worker(std::ofstream &f, int dela, QString mayumopath,
-               bool isTorqueEnabled, int fd, QObject *parent)  : file(f),
+               bool isTorqueEnabled, int fd, struct SPICONF spi, QObject *parent)  : file(f),
     torqueEnabled(isTorqueEnabled), mayumoPath(mayumopath), QObject(parent)
 {
+    struct SPICONF MYSPICONF = spi;
     del=float(dela);
     file.flush();
     this->fd=fd;
     piSetup();
+    tx[0] = 6+((4& MYSPICONF.SPI_CHANNEL)>>2);
+    tx[1] = (3 & MYSPICONF.SPI_CHANNEL)<<6;
+    tx[2] = 0;
+    struct spi_ioc_transfer spi_trans;
 }
 
 void Worker::startWork()
@@ -82,6 +86,26 @@ void Worker::countMaxonInterrupts()
     counter++;
 }
 
+inline void Worker::querySPI()
+{
+    int ret=0;
+    memset (&spi_trans, 0, sizeof (spi_trans));
+    spi_trans.tx_buf = (unsigned long) &tx;
+    spi_trans.rx_buf = (unsigned long) &rx;
+    spi_trans.len = ARRAY_SIZE(rx);
+    spi_trans.delay_usecs = MYSPICONF.delay;
+    spi_trans.speed_hz = MYSPICONF.speed;
+    ret = ioctl(fd, SPI_IOC_MESSAGE(1), &spi_trans);
+    if (ret < 0) {
+        QMessageBox msg;
+        msg.setWindowTitle("ERROR!");
+        msg.setText("Couldn't read SPI Values");
+        msg.exec();
+        exit(-1);
+    }
+
+}
+
 float Worker::convfl(uint16_t *tab, int idx)
 {
     uint32_t a;
@@ -93,6 +117,7 @@ float Worker::convfl(uint16_t *tab, int idx)
 
 int Worker::measureLoopWithoutLoadWithoutTorque()
 {
+    int idel = static_cast<int>(del);
     rtsched();
     gettimeofday(&start,0);
     QString qdisp;
@@ -119,7 +144,7 @@ int Worker::measureLoopWithoutLoadWithoutTorque()
         file.flush();
         free(disp);
         free(row);
-        delay(static_cast<int>(del));
+        delay(idel);
     }
 
 }
@@ -127,6 +152,7 @@ int Worker::measureLoopWithoutLoadWithoutTorque()
 int Worker::measureLoopWithLoadWithoutTorque()
 {
     QString qdisp;
+    int idel = static_cast<int>(del);
     char *disp = nullptr;
     char *row = nullptr;
     rtsched();
@@ -171,18 +197,18 @@ int Worker::measureLoopWithLoadWithoutTorque()
         file.flush();
         free(row);
         free(disp);
-        delay(static_cast<int>(del));
+        delay(idel);
     }
 }
 
 int Worker::measureLoopWithoutLoadWithTorque()
 {
     rtsched();
+    int idel = static_cast<int>(del);
     gettimeofday(&start,0);
     QString qdisp;
     int out;
     double val;
-    unsigned char data[3];
     if (fd == -1) {
         QMessageBox msg;
         msg.setWindowTitle("Error Opening SPI Dev. Maybe not enabled?");
@@ -198,12 +224,9 @@ int Worker::measureLoopWithoutLoadWithTorque()
     while(!QThread::currentThread()->isInterruptionRequested()) {
         rps=(counter/MAXONMULTI)*(1000/del);
         rpm=rps*60;
-        data[0]= 1;
-        data[1]= (8 + SPI_CHANNEL) << 4;
-        data[2] = 0;
-        wiringPiSPIDataRW(0, data,3);
-        out = ((data[1] & 3 ) << 8) + data[2];
-        val = out/1023.0 * REFERENCE_VOLTAGE;
+        querySPI();
+        out = ((rx[1] & 15) << 8) | rx[2];
+        val = out/4095.0 * 5.0;
         gettimeofday(&end,0);
         timersub(&end,&start,&diff);
         asprintf(&disp,"RPM: %f\nRPS: %f\nTorque: %f\n",rpm, rps, val);
@@ -219,13 +242,14 @@ int Worker::measureLoopWithoutLoadWithTorque()
         file.flush();
         free(disp);
         free(row);
-        delay(static_cast<int>(del));
+        delay(idel);
     }
 }
 
 int Worker::measureLoopWithLoadWithTorque()
 {
     QString qdisp;
+    int idel = static_cast<int>(del);
     char *disp = nullptr;
     char *row = nullptr;
     rtsched();
@@ -241,7 +265,6 @@ int Worker::measureLoopWithLoadWithTorque()
     modbus_set_response_timeout(ctx, 1, 0);
     int out;
     double val;
-    unsigned char data[3];
     if (fd == -1) {
         QMessageBox msg;
         msg.setWindowTitle("Error Opening SPI Dev. Maybe not enabled?");
@@ -264,14 +287,9 @@ int Worker::measureLoopWithLoadWithTorque()
         rpm=rps*60;
         i=convfl(&reg[2],0);
         u=convfl(&reg[0],0);
-        data[0]= 1;
-        data[1]= (8 + SPI_CHANNEL) << 4;
-        data[2] = 0;
-        wiringPiSPIDataRW(0, data,3);
-        out = ((data[1] & 3 ) << 8) + data[2];
-        val = out/1023.0 * REFERENCE_VOLTAGE;
-        //p=convfl(&reg[5],0);
-        //r=convfl(&reg[7],0);
+        querySPI();
+        out = ((rx[1] & 15) << 8) | rx[2];
+        val = out/4095.0 * 5.0;
         p=i*u;
         gettimeofday(&end,0);
         timersub(&end,&start,&diff);
@@ -291,7 +309,7 @@ int Worker::measureLoopWithLoadWithTorque()
         file.flush();
         free(row);
         free(disp);
-        delay(static_cast<int>(del));
+        delay(idel);
     }
 
 }

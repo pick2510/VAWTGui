@@ -14,7 +14,16 @@
 #include <sys/time.h>
 #include "modbus/modbus.h"
 #include <sched.h>
-#define MY_PRIORITY (35)
+#include "libvawt.h"
+#include <fcntl.h>
+#include <stdint.h>
+#include <sys/ioctl.h>
+#include <linux/types.h>
+#include <linux/spi/spidev.h>
+
+#define MY_PRIORITY (90)
+
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 
 
@@ -23,7 +32,7 @@ class Worker : public QObject {
     Q_OBJECT
 public:
     explicit Worker(std::ofstream &f, int dela, QString mayumopath,
-                    bool isTorqueEnabled, int fd,
+                    bool isTorqueEnabled, int fd, struct SPICONF spi,
                     QObject *parent=0);
 
 public slots:
@@ -42,11 +51,16 @@ private:
     QString mayumoPath;
     std::ofstream &file;
     bool torqueEnabled;
+    struct spi_ioc_transfer spi_trans;
+    struct SPICONF MYSPICONF;
+    char tx[3];
+    char rx[3];
     void piSetup();
     float del;
     int fd;
     static void countMaxonInterrupts ();
     struct sched_param param;
+    inline void querySPI();
     int measureLoopWithoutLoadWithoutTorque();
     int measureLoopWithLoadWithoutTorque();
     int measureLoopWithoutLoadWithTorque();

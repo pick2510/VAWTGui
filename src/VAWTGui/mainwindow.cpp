@@ -4,9 +4,11 @@
 #include "libvawt.h"
 #include "ui_mainwindow.h"
 
-const static int SPI_CHANNEL = 0;
-const static int SPI_DEV=0;
-const static long int SPI_SPEED=1000000;
+
+
+
+
+
 const static char *HEADER="Date;Timer;RPM;RPS;I;U;P;R;Nm(V)\n";
 
 MainWindow::MainWindow(QWidget *parent)
@@ -57,7 +59,7 @@ void MainWindow::Start()
     writeHeader(f);
     int dela = ui->spbDelay->value();
     Worker *worker = new Worker(f, dela, ui->txtMayumi->text(),
-                                ui->chkTorque->isChecked(), fd);
+                                ui->chkTorque->isChecked(), fd, MYSPICONF);
     worker->moveToThread(&workerThread);
     connect(&workerThread, &QThread::finished, worker, &QObject::deleteLater);
     connect(&workerThread, &QThread::started, worker, &Worker::startWork);
@@ -164,5 +166,44 @@ void MainWindow::on_btnCancel_clicked()
 void MainWindow::piInitialize()
 {
     wiringPiSetup();
-    fd=wiringPiSPISetup(SPI_DEV, SPI_SPEED);
+    SPIInitialize();
+}
+
+void MainWindow::SPIInitialize()
+{
+    int ret=0;
+    fd = open(MYSPICONF.device, O_RDWR);
+    if (fd <  0) {
+        QMessageBox msg;
+        msg.setWindowTitle("ERROR!");
+        msg.setText("Couldn't open SPIDEV: " + QString::fromLocal8Bit(
+                        MYSPICONF.device));
+        msg.exec();
+        exit(-1);
+    }
+    ret = ioctl(fd, SPI_IOC_WR_MODE, &MYSPICONF.mode);
+    if(ret < 0) {
+        QMessageBox msg;
+        msg.setWindowTitle("ERROR!");
+        msg.setText("Couldn't set SPI MODE");
+        msg.exec();
+        exit(-1);
+    }
+    ret = ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &MYSPICONF.bits);
+    if(ret < 0) {
+        QMessageBox msg;
+        msg.setWindowTitle("ERROR!");
+        msg.setText("Couldn't set SPI BITS PER WORD");
+        msg.exec();
+        exit(-1);
+    }
+    ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &MYSPICONF.speed);
+    if(ret < 0) {
+        QMessageBox msg;
+        msg.setWindowTitle("ERROR!");
+        msg.setText("Couldn't set SPI MAX SPEED");
+        msg.exec();
+        exit(-1);
+    }
+
 }
