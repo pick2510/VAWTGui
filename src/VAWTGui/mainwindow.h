@@ -24,6 +24,9 @@
 #include "worker.h"
 #include "libvawt.h"
 
+
+
+
 namespace Ui {
 class MainWindow;
 }

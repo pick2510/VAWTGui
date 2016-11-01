@@ -6,6 +6,16 @@ static modbus_t *ctx; //Modbus Connection Handler
 static struct timeval start, diff, end;
 const static double MAXONMULTI=500;
 
+/**
+ * @brief Worker::Worker: Constructor. Initalizes several parameters.
+ * @param f
+ * @param dela
+ * @param mayumopath
+ * @param isTorqueEnabled
+ * @param fd
+ * @param spi
+ * @param parent
+ */
 
 Worker::Worker(std::ofstream &f, int dela, QString mayumopath,
                bool isTorqueEnabled, int fd, struct SPICONF spi, QObject *parent)  : file(f),
@@ -22,6 +32,10 @@ Worker::Worker(std::ofstream &f, int dela, QString mayumopath,
     struct spi_ioc_transfer spi_trans;
 }
 
+/**
+ * @brief Worker::startWork: Selects appropriate measurement loop and starts it.
+ */
+
 void Worker::startWork()
 {
 
@@ -36,12 +50,20 @@ void Worker::startWork()
     emit(execFinished());
 }
 
+/**
+ * @brief Worker::piSetup: Sets pin for measurement. Defines interrupthandler
+ */
+
 void Worker::piSetup()
 {
     pinMode(2, INPUT);
     pullUpDnControl(2, PUD_UP);
     wiringPiISR(2,INT_EDGE_FALLING, &countMaxonInterrupts);
 }
+
+/**
+ * @brief Worker::rtsched: Activates realtime Scheduling.
+ */
 
 void Worker::rtsched()
 {
@@ -50,6 +72,13 @@ void Worker::rtsched()
         exit(-1);
     }
 }
+
+
+/**
+ * @brief Worker::openLoad: Opens ttyUSB for reading values.
+ * @param c
+ * @return
+ */
 
 int Worker::openLoad(const char *c)
 {
@@ -66,6 +95,12 @@ int Worker::openLoad(const char *c)
 }
 
 
+/**
+ * @brief Worker::readLoadRegister: Reads Modbus register at addr to reg
+ * @param addr
+ * @return
+ */
+
 int Worker::readLoadRegister(int addr)
 {
     int i;
@@ -81,10 +116,18 @@ int Worker::readLoadRegister(int addr)
     return i;
 }
 
+/**
+ * @brief Worker::countMaxonInterrupts: Count encoder interrupts
+ */
+
 void Worker::countMaxonInterrupts()
 {
     counter++;
 }
+
+/**
+ * @brief Worker::querySPI: Reads adc values with tx command to rx array.
+ */
 
 inline void Worker::querySPI()
 {
@@ -106,6 +149,13 @@ inline void Worker::querySPI()
 
 }
 
+/**
+ * @brief Worker::convfl:Decodes Mayumo Modbus values
+ * @param tab
+ * @param idx
+ * @return
+ */
+
 float Worker::convfl(uint16_t *tab, int idx)
 {
     uint32_t a;
@@ -114,6 +164,11 @@ float Worker::convfl(uint16_t *tab, int idx)
     memcpy(&f, &a, sizeof(float));
     return f;
 }
+
+/**
+ * @brief Worker::measureLoopWithoutLoadWithoutTorque: Measureloop
+ * @return
+ */
 
 int Worker::measureLoopWithoutLoadWithoutTorque()
 {
@@ -148,6 +203,11 @@ int Worker::measureLoopWithoutLoadWithoutTorque()
     }
 
 }
+
+/**
+ * @brief Worker::measureLoopWithLoadWithoutTorque: Measureloop
+ * @return
+ */
 
 int Worker::measureLoopWithLoadWithoutTorque()
 {
@@ -185,7 +245,6 @@ int Worker::measureLoopWithLoadWithoutTorque()
                  rpm, rps, i,u,p,r);
         qdisp = QString::fromUtf8(disp);
         emit resultReady(qdisp);
-        //printf("I: %f oA \nU: %f V \nP: %f W \nR: %f Ohm \n", );
         counter = 0;
         time(&t);
         tnow=localtime(&t);
@@ -201,6 +260,11 @@ int Worker::measureLoopWithLoadWithoutTorque()
     }
 }
 
+
+/**
+ * @brief Worker::measureLoopWithoutLoadWithTorque: Measure loop
+ * @return
+ */
 int Worker::measureLoopWithoutLoadWithTorque()
 {
     rtsched();
@@ -246,6 +310,11 @@ int Worker::measureLoopWithoutLoadWithTorque()
     }
 }
 
+
+/**
+ * @brief Worker::measureLoopWithLoadWithTorque: Measure loop
+ * @return
+ */
 int Worker::measureLoopWithLoadWithTorque()
 {
     QString qdisp;
