@@ -28,9 +28,12 @@ RESOURCES += \
 
 CONFIG += c++11
 
+#CONFIG += staticlib
+
+#CONFIG += static
+
 unix|win32: LIBS += -lwiringPi
 
 unix|win32: LIBS += -lmodbus
 
 
-unix|win32: LIBS += -lusb
