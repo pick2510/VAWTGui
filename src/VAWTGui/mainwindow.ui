@@ -79,7 +79,7 @@
     <property name="geometry">
      <rect>
       <x>79</x>
-      <y>128</y>
+      <y>150</y>
       <width>201</width>
       <height>21</height>
      </rect>
@@ -178,38 +178,6 @@ p, li { white-space: pre-wrap; }
      <string>Path</string>
     </property>
    </widget>
-   <widget class="QLabel" name="label_6">
-    <property name="geometry">
-     <rect>
-      <x>30</x>
-      <y>156</y>
-      <width>121</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string> Maxon Encoder</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-    </property>
-   </widget>
-   <widget class="QCheckBox" name="chkMaxon">
-    <property name="geometry">
-     <rect>
-      <x>160</x>
-      <y>158</y>
-      <width>16</width>
-      <height>16</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="checked">
-     <bool>true</bool>
-    </property>
-   </widget>
    <widget class="QLabel" name="label_7">
     <property name="geometry">
      <rect>
@@ -285,6 +253,28 @@ p, li { white-space: pre-wrap; }
     </property>
     <property name="text">
      <string>Cancel</string>
+    </property>
+   </widget>
+   <widget class="QTextEdit" name="txtPath">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>105</y>
+      <width>321</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>0</width>
+      <height>21</height>
+     </size>
+    </property>
+    <property name="lineWrapMode">
+     <enum>QTextEdit::NoWrap</enum>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>

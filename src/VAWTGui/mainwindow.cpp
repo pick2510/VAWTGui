@@ -21,12 +21,13 @@ MainWindow::MainWindow(QWidget *parent)
     if (!isFileExisiting(ui->txtMayumi->text().toStdString().c_str())) {
         ui->txtMayumi->setText("");
     }
-    Path = ".";
+    Path=QDir::currentPath();
     this->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter,
                                           this->size(),
                                           qApp->desktop()->availableGeometry()));
     fd=0;
     this->setFixedSize(this->size());
+    ui->txtPath->setText(Path);
     piInitialize();
 
 }
@@ -171,6 +172,7 @@ void MainWindow::on_btnPath_clicked()
     this->setPath(QFileDialog::getExistingDirectory(
                       this, tr("Open Directory"), ".",
                       QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks));
+    ui->txtPath->setText(Path);
 }
 
 /**
