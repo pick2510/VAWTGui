@@ -210,19 +210,6 @@ p, li { white-space: pre-wrap; }
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="QLineEdit" name="txtMayumi">
-    <property name="geometry">
-     <rect>
-      <x>160</x>
-      <y>200</y>
-      <width>108</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>/dev/ttyUSB0</string>
-    </property>
-   </widget>
    <widget class="QLabel" name="label_4">
     <property name="geometry">
      <rect>
@@ -261,7 +248,7 @@ p, li { white-space: pre-wrap; }
       <x>30</x>
       <y>105</y>
       <width>321</width>
-      <height>25</height>
+      <height>31</height>
      </rect>
     </property>
     <property name="minimumSize">
@@ -274,6 +261,22 @@ p, li { white-space: pre-wrap; }
      <enum>QTextEdit::NoWrap</enum>
     </property>
     <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="chkMayumi">
+    <property name="geometry">
+     <rect>
+      <x>162</x>
+      <y>201</y>
+      <width>21</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="checked">
      <bool>true</bool>
     </property>
    </widget>

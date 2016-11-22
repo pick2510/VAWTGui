@@ -18,8 +18,9 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    if (!isFileExisiting(ui->txtMayumi->text().toStdString().c_str())) {
-        ui->txtMayumi->setText("");
+    if (!isFileExisiting("/dev/ttyUSB0")) {
+        ui->chkMayumi->setChecked(false);
+        ui->chkMayumi->setEnabled(false);
     }
     Path=QDir::currentPath();
     this->setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter,
@@ -45,29 +46,6 @@ MainWindow::~MainWindow()
 }
 
 
-/**
- * @brief MainWindow::checkParams
- * Checks if ttyUSB is existing. Returns this values
- * @returns if ttyUSB exists.
- */
-
-bool MainWindow::checkParams()
-{
-    if (!ui->txtMayumi->text().toStdString().empty()) {
-        if (!isFileExisiting(ui->txtMayumi->text().toStdString().c_str())) {
-            QMessageBox msg;
-            msg.setWindowTitle("Error!");
-            msg.setText("Mayumi DC Load Devicefile doesn't exist: " +
-                        ui->txtMayumi->text());
-            msg.exec();
-            return false;
-
-        } else {
-            isMayumoEnabled = true;
-        }
-    }
-    return true;
-}
 
 /**
  * @brief MainWindow::Start
@@ -78,7 +56,7 @@ void MainWindow::Start()
     openFile(f);
     writeHeader(f);
     int dela = ui->spbDelay->value();
-    Worker *worker = new Worker(f, dela, ui->txtMayumi->text(),
+    Worker *worker = new Worker(f, dela, "/dev/ttyUSB0",
                                 ui->chkTorque->isChecked(), fd, MYSPICONF);
     worker->moveToThread(&workerThread);
     connect(&workerThread, &QThread::finished, worker, &QObject::deleteLater);
@@ -182,12 +160,9 @@ void MainWindow::on_btnPath_clicked()
 void MainWindow::on_btnStart_clicked()
 {
     isLoggingEnabled = ui->chkLogging->isChecked();
-    isMayumoEnabled = false;
-    if (checkParams()) {
-        Start();
-        ui->btnStart->setEnabled(false);
-        ui->btnCancel->setEnabled(true);
-    }
+    Start();
+    ui->btnStart->setEnabled(false);
+    ui->btnCancel->setEnabled(true);
 }
 
 /**
@@ -204,7 +179,7 @@ void MainWindow::openFile(std::ofstream &f)
     time(&t);
     tnow = localtime(&t);
     asprintf(&filename, "%02d-%02d-%02d_%02d-%02d-%02d.csv" ,tnow->tm_mday,
-             tnow->tm_mon, tnow->tm_year+1900, tnow->tm_hour, tnow->tm_min, tnow->tm_sec);
+             tnow->tm_mon+1, tnow->tm_year+1900, tnow->tm_hour, tnow->tm_min, tnow->tm_sec);
     file << Path.toStdString() << "/" << filename;
     f.open(file.str().c_str());
     if (f.fail()) {

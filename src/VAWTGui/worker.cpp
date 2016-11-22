@@ -174,6 +174,7 @@ int Worker::measureLoopWithoutLoadWithoutTorque()
 {
     int idel = static_cast<int>(del);
     rtsched();
+    int slen;
     gettimeofday(&start,0);
     QString qdisp;
     float rps=0,rpm=0;
@@ -192,10 +193,10 @@ int Worker::measureLoopWithoutLoadWithoutTorque()
         counter = 0;
         time(&t);
         tnow=localtime(&t);
-        asprintf(&row,"%02d.%02d.%02d %02d:%02d:%02d;%li.%06li;%f;%f;0;0;0;0;0\n",
-                 tnow->tm_mday, tnow->tm_mon, tnow->tm_year+1900, tnow->tm_hour, tnow->tm_min,
+        slen = asprintf(&row,"%02d.%02d.%02d %02d:%02d:%02d;%li.%06li;%f;%f;0;0;0;0;0\n",
+                 tnow->tm_mday, tnow->tm_mon+1, tnow->tm_year+1900, tnow->tm_hour, tnow->tm_min,
                  tnow->tm_sec, diff.tv_sec, diff.tv_usec, rpm,rps);
-        file << row;
+        file.write(row, slen);
         file.flush();
         free(disp);
         free(row);
@@ -212,6 +213,7 @@ int Worker::measureLoopWithoutLoadWithoutTorque()
 int Worker::measureLoopWithLoadWithoutTorque()
 {
     QString qdisp;
+    int slen;
     int idel = static_cast<int>(del);
     char *disp = nullptr;
     char *row = nullptr;
@@ -248,11 +250,11 @@ int Worker::measureLoopWithLoadWithoutTorque()
         counter = 0;
         time(&t);
         tnow=localtime(&t);
-        asprintf(&row,
+        slen = asprintf(&row,
                  "%02d.%02d.%02d %02d:%02d:%02d;%li.%0li;%f;%f;%f;%f;%f;%f;0\n",
-                 tnow->tm_mday, tnow->tm_mon, tnow->tm_year+1900, tnow->tm_hour, tnow->tm_min,
+                 tnow->tm_mday, tnow->tm_mon+1, tnow->tm_year+1900, tnow->tm_hour, tnow->tm_min,
                  tnow->tm_sec, diff.tv_sec, diff.tv_usec, rpm, rps, i,u,p,r);
-        file << *row;
+        file.write(row, slen);
         file.flush();
         free(row);
         free(disp);
@@ -268,6 +270,7 @@ int Worker::measureLoopWithLoadWithoutTorque()
 int Worker::measureLoopWithoutLoadWithTorque()
 {
     rtsched();
+    int slen;
     int idel = static_cast<int>(del);
     gettimeofday(&start,0);
     QString qdisp;
@@ -299,10 +302,10 @@ int Worker::measureLoopWithoutLoadWithTorque()
         counter = 0;
         time(&t);
         tnow=localtime(&t);
-        asprintf(&row,"%02d.%02d.%02d %02d:%02d:%02d;%li.%06li;%f;%f;0;0;0;0;%f\n",
-                 tnow->tm_mday, tnow->tm_mon, tnow->tm_year+1900, tnow->tm_hour, tnow->tm_min,
+        slen = asprintf(&row,"%02d.%02d.%02d %02d:%02d:%02d;%li.%06li;%f;%f;0;0;0;0;%f\n",
+                 tnow->tm_mday, tnow->tm_mon+1, tnow->tm_year+1900, tnow->tm_hour, tnow->tm_min,
                  tnow->tm_sec, diff.tv_sec, diff.tv_usec, rpm,rps, val);
-        file << row;
+        file.write(row, slen);
         file.flush();
         free(disp);
         free(row);
@@ -318,6 +321,8 @@ int Worker::measureLoopWithoutLoadWithTorque()
 int Worker::measureLoopWithLoadWithTorque()
 {
     QString qdisp;
+    std::string sres;
+    int slen;
     int idel = static_cast<int>(del);
     char *disp = nullptr;
     char *row = nullptr;
@@ -370,11 +375,11 @@ int Worker::measureLoopWithLoadWithTorque()
         counter = 0;
         time(&t);
         tnow=localtime(&t);
-        asprintf(&row,
+        slen = asprintf(&row,
                  "%02d.%02d.%02d %02d:%02d:%02d;%li.%0li;%f;%f;%f;%f;%f;%f;%f\n",
-                 tnow->tm_mday, tnow->tm_mon, tnow->tm_year+1900, tnow->tm_hour, tnow->tm_min,
+                 tnow->tm_mday, tnow->tm_mon+1, tnow->tm_year+1900, tnow->tm_hour, tnow->tm_min,
                  tnow->tm_sec, diff.tv_sec, diff.tv_usec, rpm, rps, i,u,p,r,val);
-        file << *row;
+        file.write(row, slen);
         file.flush();
         free(row);
         free(disp);
